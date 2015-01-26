@@ -7,23 +7,20 @@ from subprocess import call
 """
 Values:
 permit type
-permit id
 permit issued to
 facility name
 facility address
 facility contact
 facility description
-
-## typically on a page entitled "list of conditions" 
 federally enforceable conditions
 
 ## emission information
-## if page with"Facility Permissible Emissions" exists then need:
+## if page with "Facility Permissible Emissions" exists then need:
 name of pollutant  # written as "Name:"
 potential to emit  # written as "PTE:" or "PTE(s):" and followed by value 
 
 ## "Emission Unit Permissible Emissions"
-## if page with"Emission Unit Permissible Emissions" exists then need:
+## if page with "Emission Unit Permissible Emissions" exists then need:
 emission unit  # this should match up with the same emission unit and related information in subsequent pages below
 name of pollutant  # written as "Name:"
 potential to emit  # written as "PTE:" or "PTE(s):" and followed by value 
@@ -65,22 +62,41 @@ def background_segment(cleaned):
     records = []
     record = []
     start = False
-
     for ind, line in enumerate(cleaned):
         first = "Permit Type" in line
         if first:
             start = True
         if start:
             record.append(line)
-            first = "By acceptance of this permit, the permittee agrees that the permit" in line
+            if "Permit Type:" in line:
+                permit_type = line.split("Permit Type:")[1]
+                values["permit_type"].append(str(permit_type).strip())
+            if "Permit ID:" in line:
+                permit_id = line.split("Permit ID:")[1]
+                values["permit_id"].append(str(permit_id).strip())
+            if "Permit Issued To:" in line:
+                permit_issued = line.split("Permit Issued To:")[1]
+                values["permit_issued_to"].append(str(permit_issued).strip())
+            if "Facility:" in line:
+                facility_name = line.split("Facility:")[1]
+                values["facility_name"].append(str(facility_name).strip())
+
+                facility_street = cleaned[ind+1]
+                values["facility_street"].append(str(facility_street).strip())
+                facility_city = cleaned[ind+2].split(",")[0]
+                values["facility_city"].append(str(facility_city).strip())
+                facility_zip = cleaned[ind+2].split(",")[1][3:]
+                values["facility_zip"].append(str(facility_zip).strip())
+            if "Contact:" in line:
+                facility_contact = line.split("Contact:")[1]
+                values["facility_contact"].append(str(facility_contact).strip())
+
+            first = "By acceptance of this permit" in line
             if first:
                 records.append(record)
                 record = []
                 start = False
 
-        if "Permit Type:" in line:
-            permit_type = line.split("Permit Type: ")[1]
-            values["permit type"].append(str(permit_type))
 
     return records
 
@@ -89,13 +105,24 @@ def list_of_conditions_segment(cleaned):
     records = []
     record = []
     start = False
-
+    print cleaned
     for ind, line in enumerate(cleaned):
         first = "FEDERALLY ENFORCEABLE CONDITIONS" in line
         if first:
             start = True
         if start:
             record.append(line)
+            if "40CFR 63" in line:
+                facility_mact = line.split("Subpart")[1]
+                mact_val = str(facility_mact).strip()
+                if mact_val not in values["facility_mact"] and len(mact_val) < 8:
+                    values["facility_mact"].append(mact_val)
+            if "40CFR 60" in line:
+                facility_nsps = line.split("Subpart")[1]
+                nsps_val = str(facility_nsps).strip()
+                if nsps_val not in values["facility_nsps"] and len(nsps_val) < 8:
+                    values["facility_nsps"].append(nsps_val)
+
             first = "STATE ONLY ENFORCEABLE CONDITIONS" in line
             if first:
                 records.append(record)
@@ -134,17 +161,17 @@ def emission_parse(record):
                 in_range = False
             if in_range:
                 emission_unit = line.split("Emission Unit:")[1]
-                values["emission unit"].append(emission_unit)
+                values["emission_unit"].append(emission_unit)
                 if "Process Description" in record[ind + 1]:
-                    values["process description"].append(
+                    values["process_description"].append(
                         [record[ind + 1].split("Process Description")[1], emission_unit])
                 else:
-                    values["process description"].append('NA')
+                    values["process_description"].append('NA')
                 if "Emission Unit Description" in record[ind + 1]:
-                    values["emission unit description"].append(
+                    values["emission_unit_description"].append(
                         [record[ind + 1].split("Emission Unit Description")[1], emission_unit])
                 else:
-                    values["emission unit description"].append('NA')
+                    values["emission_unit_description"].append('NA')
                 try:
                     record[ind + 10]
                 except IndexError:
@@ -152,20 +179,20 @@ def emission_parse(record):
                 if in_range_plus_ten:
                     for i in xrange(ind, ind + 11):
                         if "Name:" in record[i]:
-                            values["name of pollutant"].append(record[i].split("Name:")[1])
+                            values["pollutant"].append(record[i].split("Name:")[1])
                             name_exists = True
                         if "PTE" in record[i]:
                             new_line = record[i].replace("(", "")
                             new_line = new_line.replace("s", "")  # assumes name is upper case
                             new_line = new_line.replace(")", "")
-                            values["potential to emit"].append(record[i].split("PTE")[1])
+                            values["potential_to_emit"].append(record[i].split("PTE")[1])
                             PTE_exists = True
                         if not name_exists:
-                            values["name of pollutant"].append('NA')
+                            values["pollutant"].append('NA')
                         else:
                             name_exists = False
                         if not PTE_exists:
-                            values["potential to emit"].append('NA')
+                            values["potential_to_emit"].append('NA')
                         else:
                             PTE_exists = False
 
@@ -176,6 +203,7 @@ def main(pdf=None):
     if pdf == None:
         #pdf = sys.argv[1]
         pdf = '/Users/Steve/Github/ny_caa_permit_parser/914640016400117_r1_4.pdf'
+        #pdf = '/Users/Steve/Github/ny_caa_permit_parser/552050000500059_r2.pdf'
 
     if "@" in pdf and pdf.count(".") == 2:
         name_text = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".txt"
@@ -196,11 +224,28 @@ def main(pdf=None):
 
 
 
-    df = pd.DataFrame(columns=["permit type", "permit id", "permit issued to", "facility name", "facility address",
-                               "facility contact", "facility description", "federally enforceable conditions",
-                               "name of pollutant", "potential to emit", "emission units", "emission unit description",
-                               "process description", "control type", "monitoring type", "monitoring frequency",
-                               "parameter monitored", "upper permit limit", "lower permit limit"])
+    df = pd.DataFrame(columns=["permit_type",
+                               "permit_id",
+                               "permit_issued_to",
+                               "facility_name",
+                               "facility_street",
+                               "facility_city",
+                               "facility_zip",
+                               "facility_contact",
+                               "facility_description",
+                               "facility_mact",
+                               "facility_nsps",
+                               "pollutant",
+                               "potential_to_emit",
+                               "emission_units",
+                               "emission_unit_description",
+                               "process_description",
+                               "control_type",
+                               "monitoring_type",
+                               "monitoring_frequency",
+                               "parameter_monitored",
+                               "upper_permit_limit",
+                               "lower_permit_limit"])
 
     for record in records:
         df = df.append(record, ignore_index=True)
@@ -209,12 +254,21 @@ def main(pdf=None):
 
 if __name__ == '__main__':
     values = {
-        "permit type": [],
-        "emission unit": [],
-        "emission unit description": [],
-        "name of pollutant": [],
-        "potential to emit": [],
-        "process description": []
+        "permit_type": [],
+        "permit_id": [],
+        "permit_issued_to": [],
+        "facility_name": [],
+        "facility_street": [],
+        "facility_city": [],
+        "facility_zip": [],
+        "facility_contact": [],
+        "facility_mact": [],
+        "facility_nsps": [],
+        "emission_unit": [],
+        "emission_unit_description": [],
+        "pollutant": [],
+        "potential_to_emit": [],
+        "process_description": []
     }
 
     main()
