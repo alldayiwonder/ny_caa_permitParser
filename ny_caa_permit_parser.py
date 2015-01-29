@@ -105,7 +105,6 @@ def list_of_conditions_segment(cleaned):
     records = []
     record = []
     start = False
-    print cleaned
     for ind, line in enumerate(cleaned):
         first = "FEDERALLY ENFORCEABLE CONDITIONS" in line
         if first:
@@ -146,7 +145,6 @@ def rest_of_file_segment(cleaned):
 
 
 def emission_parse(record):
-
     in_range = True
     in_range_plus_ten = True
 
@@ -156,22 +154,26 @@ def emission_parse(record):
 
         if "Emission Unit:" in line:
             try:
-                record[ind + 1]
+                record[ind+1]
             except IndexError:
                 in_range = False
             if in_range:
-                emission_unit = line.split("Emission Unit:")[1]
-                values["emission_unit"].append(emission_unit)
+                # Get all emission units
+                emission_unit_line = str(line.split("Emission Unit:")[1]).strip()
+                emission_unit = emission_unit_line.split(" ")[0]
+                if emission_unit not in values["emission_unit"] and emission_unit != '':
+                    values["emission_unit"].append(str(emission_unit).strip())
+
                 if "Process Description" in record[ind + 1]:
                     values["process_description"].append(
                         [record[ind + 1].split("Process Description")[1], emission_unit])
                 else:
-                    values["process_description"].append('NA')
+                    continue
                 if "Emission Unit Description" in record[ind + 1]:
                     values["emission_unit_description"].append(
                         [record[ind + 1].split("Emission Unit Description")[1], emission_unit])
                 else:
-                    values["emission_unit_description"].append('NA')
+                    continue
                 try:
                     record[ind + 10]
                 except IndexError:
@@ -188,13 +190,24 @@ def emission_parse(record):
                             values["potential_to_emit"].append(record[i].split("PTE")[1])
                             PTE_exists = True
                         if not name_exists:
-                            values["pollutant"].append('NA')
+                            continue
                         else:
                             name_exists = False
                         if not PTE_exists:
-                            values["potential_to_emit"].append('NA')
+                            continue
                         else:
                             PTE_exists = False
+                        # Get all controls
+
+        if "Control Type:" in line:
+            control_type = str(line.split("Control Type:")[1]).strip()
+            if control_type not in values["control_type"] and control_type != '':
+                values["control_type"].append(str(control_type).strip())
+
+        if "Name:" in line:
+            pollutant = str(line.split("Name:")[1]).strip()
+            if pollutant not in values["pollutant"] and pollutant != '':
+                values["pollutant"].append(str(pollutant).strip())
 
     return values
 
@@ -235,12 +248,12 @@ def main(pdf=None):
                                "facility_description",
                                "facility_mact",
                                "facility_nsps",
+                               "emission_unit",
+                               "control_type",
                                "pollutant",
                                "potential_to_emit",
-                               "emission_units",
                                "emission_unit_description",
                                "process_description",
-                               "control_type",
                                "monitoring_type",
                                "monitoring_frequency",
                                "parameter_monitored",
@@ -265,9 +278,10 @@ if __name__ == '__main__':
         "facility_mact": [],
         "facility_nsps": [],
         "emission_unit": [],
-        "emission_unit_description": [],
+        "control_type": [],
         "pollutant": [],
         "potential_to_emit": [],
+        "emission_unit_description": [],
         "process_description": []
     }
 

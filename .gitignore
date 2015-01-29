@@ -12,3 +12,9 @@ ny_caa_permit_parser_old.py
 552050000500059_r2.pdf
 
 552050000500059_r2.txt
+
+.idea/.name
+
+*.xml
+
+.idea/ny_caa_permit_parser.iml
