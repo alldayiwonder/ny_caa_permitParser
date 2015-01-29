@@ -71,9 +71,9 @@ def background_segment(cleaned):
             if "Permit Type:" in line:
                 permit_type = line.split("Permit Type:")[1]
                 values["permit_type"].append(str(permit_type).strip())
-            if "Permit ID:" in line:
-                permit_id = line.split("Permit ID:")[1]
-                values["permit_id"].append(str(permit_id).strip())
+            if "Facility DEC ID:" in line:
+                dec_id = line.split("Facility DEC ID:")[1]
+                values["dec_id"].append(str(dec_id).strip())
             if "Permit Issued To:" in line:
                 permit_issued = line.split("Permit Issued To:")[1]
                 values["permit_issued_to"].append(str(permit_issued).strip())
@@ -238,7 +238,7 @@ def main(pdf=None):
 
 
     df = pd.DataFrame(columns=["permit_type",
-                               "permit_id",
+                               "dec_id",
                                "permit_issued_to",
                                "facility_name",
                                "facility_street",
@@ -268,7 +268,7 @@ def main(pdf=None):
 if __name__ == '__main__':
     values = {
         "permit_type": [],
-        "permit_id": [],
+        "dec_id": [],
         "permit_issued_to": [],
         "facility_name": [],
         "facility_street": [],
