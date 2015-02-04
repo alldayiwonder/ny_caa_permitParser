@@ -13,20 +13,21 @@ These environmental permits hold important information and the data is not acces
 <h4> Outline of information to be parsed: </h4>
 
 <ul>permit type</ul>
-<ul>permit id</ul>
+<ul>dec id</ul>
 <ul>permit issued to</ul>
 <ul>facility name</ul>
-<ul>facility address</ul>
+<ul>facility street</ul>
+<ul>facility zip</ul>
 <ul>facility contact</ul>
 <ul>facility description</ul>
-<ul>federally enforceable conditions</ul>
-<ul>name of pollutants </ul>
-<ul>potential to emit </ul>
-<ul>emission unit  # to match up with related information in subsequent pages </ul>
-<ul>emission unit description </ul>
-<ul>control type </ul>
-<ul>monitoring type </ul>
-<ul>monitoring frequency </ul>
-<ul>parameter monitored</ul>
-<ul>upper permit limit</ul>
-<ul>lower permit limit</ul>
+<ul>applicable maximum achievable control technology (MACT) standards</ul>
+<ul>applicable new source performance (NSPS) standards</ul>
+<ul>name of pollutants</ul>
+<ul>potential to emit</ul>
+<ul>emission units</ul>
+<ul>control types</ul>
+<ul>monitoring types</ul>
+<ul>monitoring frequencies</ul>
+<ul>parameters monitored</ul>
+<ul>upper permit limits</ul>
+<ul>lower permit limits</ul>
