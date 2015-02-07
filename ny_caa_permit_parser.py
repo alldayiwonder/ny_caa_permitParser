@@ -149,16 +149,16 @@ def parse(record):
         if "Facility:" in line:
             try:
                 facility_name = str(line.split("Facility:")[1]).strip()
-                if facility_name not in values["facility_name"]:
+                if facility_name not in values["facility_name"] and len(values["facility_name"]) < 1:
                     values["facility_name"].append(str(facility_name).strip())
                 facility_street = str(record[ind+1]).strip()
-                if facility_street not in values["facility_street"]:
+                if facility_street not in values["facility_street"] and len(values["facility_name"]) < 1:
                     values["facility_street"].append(str(facility_street).strip())
                 facility_city = str(record[ind+2].split(",")[0]).strip()
-                if facility_city not in values["facility_city"]:
+                if facility_city not in values["facility_city"] and len(values["facility_name"]) < 1:
                     values["facility_city"].append(str(facility_city).strip())
                 facility_zip = str(record[ind+2].split(",")[1][3:]).strip()
-                if facility_zip not in values["facility_zip"]:
+                if facility_zip not in values["facility_zip"] and len(values["facility_name"]) < 1:
                     values["facility_zip"].append(str(facility_zip).strip())
             except IndexError:
                 pass
