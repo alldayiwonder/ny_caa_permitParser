@@ -1,6 +1,6 @@
 from sys import argv
 import sys
-import os
+import os, fnmatch
 import pandas as pd
 from subprocess import call
 
@@ -13,27 +13,21 @@ facility address
 facility contact
 facility description
 federally enforceable conditions
-
 ## emission information
 ## if page with "Facility Permissible Emissions" exists then need:
 name of pollutant  # written as "Name:"
 potential to emit  # written as "PTE:" or "PTE(s):" and followed by value 
-
 ## "Emission Unit Permissible Emissions"
 ## if page with "Emission Unit Permissible Emissions" exists then need:
 emission unit  # this should match up with the same emission unit and related information in subsequent pages below
 name of pollutant  # written as "Name:"
 potential to emit  # written as "PTE:" or "PTE(s):" and followed by value 
-
 ## in all subsequent pages 
 ## information on emission units, the equipment that releases pollution into the air 
-
 emission units  # written as "Emission Unit: [unit id here]"
 emission unit description  # written as "Emission Unit Description: [description here] and follows the above
 control type  # written as "Control Type:" and not always present, depends on emission unit and may repeat multiple times, we only need it once 
-
 ## information on monitoring requirements 
-
 monitoring type  # written as "Monitoring Type:"
 monitoring frequency  # written as "Monitoring Frequency:"
 parameter monitored  # written as "Parameter Monitored:" and not always present, it depends on monitoring type
@@ -63,33 +57,47 @@ def background_segment(cleaned):
     record = []
     start = False
     for ind, line in enumerate(cleaned):
-        first = "Permit Type" in line
+        first = "Facility DEC ID" in line
         if first:
             start = True
         if start:
             record.append(line)
             if "Permit Type:" in line:
-                permit_type = line.split("Permit Type:")[1]
-                values["permit_type"].append(str(permit_type).strip())
+                permit_type = str(line.split("Permit Type:")[1]).strip()
+                if permit_type not in values["permit_type"] and permit_type != '':
+                    values["permit_type"].append(str(permit_type).strip())
+                else:
+                    pass
             if "Facility DEC ID:" in line:
-                dec_id = line.split("Facility DEC ID:")[1]
-                values["dec_id"].append(str(dec_id).strip())
+                dec_id = str(line.split("Facility DEC ID:")[1]).strip()
+                if dec_id not in values["dec_id"] and dec_id != '':
+                    values["dec_id"].append(str(dec_id).strip())
+                else:
+                    pass
             if "Permit Issued To:" in line:
-                permit_issued = line.split("Permit Issued To:")[1]
-                values["permit_issued_to"].append(str(permit_issued).strip())
+                permit_issued_to = str(line.split("Permit Issued To:")[1]).strip()
+                if permit_issued_to not in values["permit_issued_to"] and permit_issued_to != '':
+                    values["permit_issued_to"].append(str(permit_issued_to).strip())
             if "Facility:" in line:
-                facility_name = line.split("Facility:")[1]
-                values["facility_name"].append(str(facility_name).strip())
-
-                facility_street = cleaned[ind+1]
-                values["facility_street"].append(str(facility_street).strip())
-                facility_city = cleaned[ind+2].split(",")[0]
-                values["facility_city"].append(str(facility_city).strip())
-                facility_zip = cleaned[ind+2].split(",")[1][3:]
-                values["facility_zip"].append(str(facility_zip).strip())
+                try:
+                    facility_name = str(line.split("Facility:")[1]).strip()
+                    if facility_name not in values["facility_name"]:
+                        values["facility_name"].append(str(facility_name).strip())
+                    facility_street = str(cleaned[ind+1]).strip()
+                    if facility_street not in values["facility_street"]:
+                        values["facility_street"].append(str(facility_street).strip())
+                    facility_city = str(cleaned[ind+2].split(",")[0]).strip()
+                    if facility_city not in values["facility_city"]:
+                        values["facility_city"].append(str(facility_city).strip())
+                    facility_zip = str(cleaned[ind+2].split(",")[1][3:]).strip()
+                    if facility_zip not in values["facility_zip"]:
+                        values["facility_zip"].append(str(facility_zip).strip())
+                except IndexError:
+                    pass
             if "Contact:" in line:
-                facility_contact = line.split("Contact:")[1]
-                values["facility_contact"].append(str(facility_contact).strip())
+                facility_contact = str(line.split("Contact:")[1]).strip()
+                if facility_contact not in values["facility_contact"]:
+                    values["facility_contact"].append(str(facility_contact).strip())
 
             first = "By acceptance of this permit" in line
             if first:
@@ -112,16 +120,21 @@ def list_of_conditions_segment(cleaned):
         if start:
             record.append(line)
             if "40CFR 63" in line:
-                facility_mact = line.split("Subpart")[1]
-                mact_val = str(facility_mact).strip()
-                if mact_val not in values["facility_mact"] and len(mact_val) < 8:
-                    values["facility_mact"].append(mact_val)
+                try:
+                    facility_mact = str(line.split("Subpart")[1]).strip()
+                    mact_val = str(facility_mact).strip()
+                    if mact_val not in values["facility_mact"] and len(mact_val) < 8 and mact_val != '':
+                        values["facility_mact"].append(mact_val)
+                except IndexError:
+                    pass
             if "40CFR 60" in line:
-                facility_nsps = line.split("Subpart")[1]
-                nsps_val = str(facility_nsps).strip()
-                if nsps_val not in values["facility_nsps"] and len(nsps_val) < 8:
-                    values["facility_nsps"].append(nsps_val)
-
+                try:
+                    facility_nsps = str(line.split("Subpart")[1]).strip()
+                    nsps_val = str(facility_nsps).strip()
+                    if nsps_val not in values["facility_nsps"] and len(nsps_val) < 8 and nsps_val != '':
+                        values["facility_nsps"].append(nsps_val)
+                except IndexError:
+                    pass
             first = "STATE ONLY ENFORCEABLE CONDITIONS" in line
             if first:
                 records.append(record)
@@ -159,8 +172,8 @@ def emission_parse(record):
                 in_range = False
             if in_range:
                 # Get all emission units
-                emission_unit_line = str(line.split("Emission Unit:")[1]).strip()
-                emission_unit = emission_unit_line.split(" ")[0]
+                emission_unit_line = line.split("Emission Unit:")[1]
+                emission_unit = str(emission_unit_line.split(" ")[0]).strip()
                 if emission_unit not in values["emission_unit"] and emission_unit != '':
                     values["emission_unit"].append(str(emission_unit).strip())
 
@@ -213,77 +226,92 @@ def emission_parse(record):
 
 
 def main(pdf=None):
+    open('output.csv', 'w').close()
+
+
+    file_list = []
+    for filename in find_files('permits', '*.pdf'):
+        file_list.append(filename)
+
     if pdf == None:
         #pdf = sys.argv[1]
-        pdf = '/Users/Steve/Github/ny_caa_permit_parser/914640016400117_r1_4.pdf'
-        #pdf = '/Users/Steve/Github/ny_caa_permit_parser/552050000500059_r2.pdf'
+        for pdf in file_list:
 
-    if "@" in pdf and pdf.count(".") == 2:
-        name_text = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".txt"
-        name_csv = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".csv"
-    else:
-        name_text = pdf.split(".")[0] + ".txt"
-        name_csv = pdf.split(".")[0] + ".csv"
+            global values
+            values = {
+                "permit_type": [],
+                "dec_id": [],
+                "permit_issued_to": [],
+                "facility_name": [],
+                "facility_street": [],
+                "facility_city": [],
+                "facility_zip": [],
+                "facility_contact": [],
+                "facility_mact": [],
+                "facility_nsps": [],
+                "emission_unit": [],
+                "control_type": [],
+                "pollutant": [],
+                "potential_to_emit": [],
+                "emission_unit_description": [],
+                "process_description": []
+            }
 
-    if not os.path.exists(name_text):
-        convert(pdf)
-    records = []
-    cleaned = clean(name_text)
+            if "@" in pdf and pdf.count(".") == 2:
+                name_text = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".txt"
+                #name_csv = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".csv"
+            else:
+                name_text = pdf.split(".")[0] + ".txt"
+                #name_csv = pdf.split(".")[0] + ".csv"
 
-    stuff_we_care_about = [background_segment(cleaned)+list_of_conditions_segment(cleaned)+rest_of_file_segment(cleaned)]
+            if not os.path.exists(name_text):
+                convert(pdf)
+            records = []
+            cleaned = clean(name_text)
 
-    for record in stuff_we_care_about:
-        records.append(emission_parse(record))
+            stuff_we_care_about = [background_segment(cleaned)+list_of_conditions_segment(cleaned)+rest_of_file_segment(cleaned)]
 
+            for record in stuff_we_care_about:
+                records.append(emission_parse(record))
 
+            df = pd.DataFrame(columns=["permit_type",
+                                       "dec_id",
+                                       "permit_issued_to",
+                                       "facility_name",
+                                       "facility_street",
+                                       "facility_city",
+                                       "facility_zip",
+                                       "facility_contact",
+                                       "facility_description",
+                                       "facility_mact",
+                                       "facility_nsps",
+                                       "emission_unit",
+                                       "control_type",
+                                       "pollutant",
+                                       "potential_to_emit",
+                                       "emission_unit_description",
+                                       "process_description",
+                                       "monitoring_type",
+                                       "monitoring_frequency",
+                                       "parameter_monitored",
+                                       "upper_permit_limit",
+                                       "lower_permit_limit"])
 
-    df = pd.DataFrame(columns=["permit_type",
-                               "dec_id",
-                               "permit_issued_to",
-                               "facility_name",
-                               "facility_street",
-                               "facility_city",
-                               "facility_zip",
-                               "facility_contact",
-                               "facility_description",
-                               "facility_mact",
-                               "facility_nsps",
-                               "emission_unit",
-                               "control_type",
-                               "pollutant",
-                               "potential_to_emit",
-                               "emission_unit_description",
-                               "process_description",
-                               "monitoring_type",
-                               "monitoring_frequency",
-                               "parameter_monitored",
-                               "upper_permit_limit",
-                               "lower_permit_limit"])
+            for key in values:
+                values[key] = ", ".join(values[key])
 
-    for record in records:
-        df = df.append(record, ignore_index=True)
-    df.to_csv(name_csv)
+            for record in records:
+                df = df.append(record, ignore_index=True)
+
+            df.to_csv('output.csv', mode='a', header=False, index=False)
+
+def find_files(directory, pattern):
+    for root, dirs, files in os.walk(directory):
+        for basename in files:
+            if fnmatch.fnmatch(basename, pattern):
+                filename = os.path.join(root, basename)
+                yield filename
 
 
 if __name__ == '__main__':
-    values = {
-        "permit_type": [],
-        "dec_id": [],
-        "permit_issued_to": [],
-        "facility_name": [],
-        "facility_street": [],
-        "facility_city": [],
-        "facility_zip": [],
-        "facility_contact": [],
-        "facility_mact": [],
-        "facility_nsps": [],
-        "emission_unit": [],
-        "control_type": [],
-        "pollutant": [],
-        "potential_to_emit": [],
-        "emission_unit_description": [],
-        "process_description": []
-    }
-
     main()
-
