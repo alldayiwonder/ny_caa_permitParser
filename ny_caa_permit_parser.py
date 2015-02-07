@@ -152,13 +152,13 @@ def parse(record):
                 if facility_name not in values["facility_name"] and len(values["facility_name"]) < 1:
                     values["facility_name"].append(str(facility_name).strip())
                 facility_street = str(record[ind+1]).strip()
-                if facility_street not in values["facility_street"] and len(values["facility_name"]) < 1:
+                if facility_street not in values["facility_street"] and len(values["facility_street"]) < 1:
                     values["facility_street"].append(str(facility_street).strip())
                 facility_city = str(record[ind+2].split(",")[0]).strip()
-                if facility_city not in values["facility_city"] and len(values["facility_name"]) < 1:
+                if facility_city not in values["facility_city"] and len(values["facility_city"]) < 1:
                     values["facility_city"].append(str(facility_city).strip())
-                facility_zip = str(record[ind+2].split(",")[1][3:]).strip()
-                if facility_zip not in values["facility_zip"] and len(values["facility_name"]) < 1:
+                facility_zip = str(record[ind+2].split(",")[1][3:9]).strip()
+                if facility_zip not in values["facility_zip"] and len(values["facility_zip"]) < 1:
                     values["facility_zip"].append(str(facility_zip).strip())
             except IndexError:
                 pass
@@ -166,8 +166,6 @@ def parse(record):
             facility_contact = str(line.split("Contact:")[1]).strip()
             if facility_contact not in values["facility_contact"]:
                 values["facility_contact"].append(str(facility_contact).strip())
-
-
         if "Emission Unit:" in line:
             try:
                 record[ind+1]
@@ -256,10 +254,11 @@ def main(pdf=None):
     for filename in find_files('permits', '*.pdf'):
         file_list.append(filename)
 
+    i = 0
     if pdf == None:
         #pdf = sys.argv[1]
         for pdf in file_list:
-
+            i += 1
             if "@" in pdf and pdf.count(".") == 2:
                 name_text = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".txt"
                 #name_csv = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".csv"
@@ -282,6 +281,7 @@ def main(pdf=None):
 
             for record in stuff_we_care_about:
                 records.append(parse(record))
+
 
             df = pd.DataFrame(columns=["permit_type",
                                        "dec_id",
@@ -309,7 +309,10 @@ def main(pdf=None):
             for record in records:
                 df = df.append(record, ignore_index=True)
 
-            df.to_csv('output.csv', mode='a', header=False, index=False)
+            if i == 1:
+                df.to_csv('output.csv', mode='a', header=True, index=False)
+            else:
+                df.to_csv('output.csv', mode='a', header=False, index=False)
 
 def find_files(directory, pattern):
     for root, dirs, files in os.walk(directory):
