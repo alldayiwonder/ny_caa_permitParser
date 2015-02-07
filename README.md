@@ -10,6 +10,9 @@ NYS CAA permits are housed here: http://www.dec.ny.gov/chemical/32249.html
 <h4> Problem: </h4>
 These environmental permits hold important information and the data is not accessible in machine-readable format. There is no requirement as of 2015 at the State or Federal level to release data in a usable format. 
 
+<h4> Solution: </h4>
+Create a Python script to read through each permit and parse important information into machine-readable format.
+
 <h4> Outline of information to be parsed: </h4>
 
 <ul>permit type</ul>
