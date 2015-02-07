@@ -9,3 +9,5 @@ ny_caa_permit_parser_old.py
 *.xml
 
 .idea/ny_caa_permit_parser.iml
+
+*.pdf
