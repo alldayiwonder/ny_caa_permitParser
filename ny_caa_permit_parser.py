@@ -3,6 +3,7 @@ import sys
 import os, fnmatch
 import pandas as pd
 from subprocess import call
+import re
 
 """
 Values:
@@ -213,7 +214,13 @@ def parse(record):
                             PTE_exists = False
 
         # Get all controls
-        if "Control Type:" in line:
+        if "Control Type:" in line and "(" in line and ")" not in line:
+            control_type = str(line.split("Control Type:")[1]).strip()
+            control_type_more = str(record[ind+1]).strip()
+            control_type_string = control_type + control_type_more
+            if control_type_string not in values["control_type"] and control_type != '':
+                values["control_type"].append(str(control_type_string).strip())
+        elif "Control Type:" in line:
             control_type = str(line.split("Control Type:")[1]).strip()
             if control_type not in values["control_type"] and control_type != '':
                 values["control_type"].append(str(control_type).strip())
@@ -228,7 +235,7 @@ def parse(record):
                 facility_mact = str(line.split("Subpart")[1]).strip()
                 mact_val = str(facility_mact).strip()
                 if mact_val not in values["facility_mact"] and len(mact_val) < 8 and mact_val != '':
-                    values["facility_mact"].append(mact_val)
+                    values["facility_mact"].append(re.sub("[^a-zA-Z]+", "", mact_val))
             except IndexError:
                 pass
         if "40CFR 60" in line:
@@ -236,7 +243,7 @@ def parse(record):
                 facility_nsps = str(line.split("Subpart")[1]).strip()
                 nsps_val = str(facility_nsps).strip()
                 if nsps_val not in values["facility_nsps"] and len(nsps_val) < 8 and nsps_val != '':
-                    values["facility_nsps"].append(nsps_val)
+                    values["facility_nsps"].append(re.sub("[^a-zA-Z]+", "", nsps_val))
             except IndexError:
                 pass
 
@@ -244,7 +251,6 @@ def parse(record):
         values[key] = ", ".join(values[key])
 
     return values
-
 
 def main(pdf=None):
     open('output.csv', 'w').close()
