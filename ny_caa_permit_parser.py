@@ -113,9 +113,9 @@ def parse(record):
         "facility_contact": [],
         "facility_mact": [],
         "facility_nsps": [],
-        "emission_unit": [],
-        "control_type": [],
-        "pollutant": [],
+        "emission_units": [],
+        "controls": [],
+        "pollutants": [],
         "potential_to_emit": [],
         "emission_unit_description": [],
         "process_description": []
@@ -174,10 +174,10 @@ def parse(record):
                 in_range = False
             if in_range:
                 # Get all emission units
-                emission_unit_line = line.split("Emission Unit:")[1]
+                emission_unit_line = str(line.split("Emission Unit:")[1]).strip()
                 emission_unit = str(emission_unit_line.split(" ")[0]).strip()
-                if emission_unit not in values["emission_unit"] and emission_unit != '':
-                    values["emission_unit"].append(str(emission_unit).strip())
+                if emission_unit not in values["emission_units"] and emission_unit != '':
+                    values["emission_units"].append(str(emission_unit).strip())
 
                 if "Process Description" in record[ind + 1]:
                     values["process_description"].append(
@@ -218,17 +218,17 @@ def parse(record):
             control_type = str(line.split("Control Type:")[1]).strip()
             control_type_more = str(record[ind+1]).strip()
             control_type_string = control_type + control_type_more
-            if control_type_string not in values["control_type"] and control_type != '':
-                values["control_type"].append(str(control_type_string).strip())
+            if control_type_string not in values["controls"] and control_type != '':
+                values["controls"].append(str(control_type_string).strip())
         elif "Control Type:" in line:
             control_type = str(line.split("Control Type:")[1]).strip()
-            if control_type not in values["control_type"] and control_type != '':
-                values["control_type"].append(str(control_type).strip())
+            if control_type not in values["controls"] and control_type != '':
+                values["controls"].append(str(control_type).strip())
 
         if "Name:" in line:
             pollutant = str(line.split("Name:")[1]).strip()
-            if pollutant not in values["pollutant"] and pollutant != '':
-                values["pollutant"].append(str(pollutant).strip())
+            if pollutant not in values["pollutants"] and pollutant != '':
+                values["pollutants"].append(str(pollutant).strip())
 
         if "40CFR 63" in line:
             try:
@@ -248,8 +248,8 @@ def parse(record):
                 pass
 
     for key in values:
-        values[key] = ", ".join(values[key])
-
+        print values[key]
+        values[key] = ", ".join(sorted(values[key]))
     return values
 
 def main(pdf=None):
@@ -260,11 +260,11 @@ def main(pdf=None):
     for filename in find_files('permits', '*.pdf'):
         file_list.append(filename)
 
-    i = 0
+    row = 0
     if pdf == None:
         #pdf = sys.argv[1]
         for pdf in file_list:
-            i += 1
+            row += 1
             if "@" in pdf and pdf.count(".") == 2:
                 name_text = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".txt"
                 #name_csv = pdf.split(".")[0] + "." + pdf.split(".")[1] + ".csv"
@@ -300,9 +300,9 @@ def main(pdf=None):
                                        "facility_description",
                                        "facility_mact",
                                        "facility_nsps",
-                                       "emission_unit",
-                                       "control_type",
-                                       "pollutant",
+                                       "emission_units",
+                                       "controls",
+                                       "pollutants",
                                        "potential_to_emit",
                                        "emission_unit_description",
                                        "process_description",
@@ -315,7 +315,7 @@ def main(pdf=None):
             for record in records:
                 df = df.append(record, ignore_index=True)
 
-            if i == 1:
+            if row == 1:
                 df.to_csv('output.csv', mode='a', header=True, index=False)
             else:
                 df.to_csv('output.csv', mode='a', header=False, index=False)
