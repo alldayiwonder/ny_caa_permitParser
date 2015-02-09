@@ -4,6 +4,7 @@ import os, fnmatch
 import pandas as pd
 from subprocess import call
 import re
+import time
 
 """
 Values:
@@ -124,12 +125,9 @@ def parse(record):
     in_range = True
     in_range_plus_ten = True
 
-    debug = open('debug.txt', 'a')
     for ind, line in enumerate(record):
         name_exists = False
         PTE_exists = False
-
-        debug.write("%s\n" % line)
 
         if "Permit Type:" in line:
             permit_type = str(line.split("Permit Type:")[1]).strip()
@@ -248,13 +246,12 @@ def parse(record):
                 pass
 
     for key in values:
-        print values[key]
         values[key] = ", ".join(sorted(values[key]))
     return values
 
 def main(pdf=None):
     open('output.csv', 'w').close()
-    open('debug.txt', 'w').close()
+    #open('debug.txt', 'w').close()
 
     file_list = []
     for filename in find_files('permits', '*.pdf'):
@@ -329,4 +326,9 @@ def find_files(directory, pattern):
 
 
 if __name__ == '__main__':
+    startTime = time.time()
+
     main()
+
+    endTime = time.time()
+    print 'Execution time', (endTime - startTime), 'seconds'
