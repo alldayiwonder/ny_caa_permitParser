@@ -58,7 +58,10 @@ def background_segment(cleaned):
     records = []
     start = False
     for ind, line in enumerate(cleaned):
-        first = "Facility DEC ID" in line
+        if "DEC ID" in line:
+            first = "DEC ID" in line
+        else:
+            first = "IDENTIFICATION INFORMATION" in line
         if first:
             start = True
         if start:
@@ -133,7 +136,15 @@ def parse(record):
             permit_type = str(line.split("Permit Type:")[1]).strip()
             if permit_type not in values["permit_type"] and permit_type != '':
                 values["permit_type"].append(str(permit_type).strip())
-
+        if "Permit Type:" not in line:
+            if "Air State Facility" in line:
+                permit_type = "Air State Facility"
+                if permit_type not in values["permit_type"] and permit_type != '':
+                    values["permit_type"].append(permit_type)
+            elif "Air Title V Facility" in line:
+                permit_type = "Air Title V Facility"
+                if permit_type not in values["permit_type"] and permit_type != '':
+                    values["permit_type"].append(permit_type)
 
         if "Facility DEC ID:" in line:
             dec_id = str(line.split("Facility DEC ID:")[1]).strip()
