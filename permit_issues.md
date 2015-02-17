@@ -2,6 +2,7 @@ Potential permit issues as of Feb 9, 2015
 
 Permit type not indicated clearly or missing:
 
+```
 1472200112	REGENCY FOREST PET MEMORIAL CEMETERY
 3132600049	WINGDALE MATERIALS LLC
 3392200003	MIRANT BOWLINE LLC
@@ -15,9 +16,11 @@ Permit type not indicated clearly or missing:
 8323000008	SENECA FOODS CORP
 9066000093	NYS DEPT OF CORRECTIONAL SERVICES
 9143000142	DERRICK MANUFACTURING CORP
+```
 
 Facility name and/or address not indicated clearly, poorly formatted, or missing parameters (e.g. zip code):
 
+```
 dec_id      permit_issued_to
 1282201225	TRIUMPH STRUCTURES - LONG ISLAND LLC
 1472803067	NEW YORK POWER AUTHORITY
@@ -61,4 +64,4 @@ dec_id      permit_issued_to
 9042000204	SWEPI LP
 9063600006	CHAUTAUQUA COUNTY
 9063800071	CHAUTAUQUA COUNTY HUMANE SOCIETY
-
+```
