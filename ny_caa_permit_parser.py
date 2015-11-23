@@ -7,7 +7,7 @@ import re
 import time
 
 """
-Values:
+Background:
 permit type
 permit issued to
 facility name
@@ -15,20 +15,22 @@ facility address
 facility contact
 facility description
 federally enforceable conditions
-## emission information
-## if page with "Facility Permissible Emissions" exists then need:
+
+Emission information:
+## if page with "Facility Permissible Emissions" exists then get:
 name of pollutant  # written as "Name:"
 potential to emit  # written as "PTE:" or "PTE(s):" and followed by value 
-## "Emission Unit Permissible Emissions"
-## if page with "Emission Unit Permissible Emissions" exists then need:
+
+## if page with "Emission Unit Permissible Emissions" exists then get:
 emission unit  # this should match up with the same emission unit and related information in subsequent pages below
 name of pollutant  # written as "Name:"
 potential to emit  # written as "PTE:" or "PTE(s):" and followed by value 
+
 ## in all subsequent pages 
-## information on emission units, the equipment that releases pollution into the air 
 emission units  # written as "Emission Unit: [unit id here]"
 emission unit description  # written as "Emission Unit Description: [description here] and follows the above
 control type  # written as "Control Type:" and not always present, depends on emission unit and may repeat multiple times, we only need it once 
+
 ## information on monitoring requirements 
 monitoring type  # written as "Monitoring Type:"
 monitoring frequency  # written as "Monitoring Frequency:"
@@ -36,7 +38,6 @@ parameter monitored  # written as "Parameter Monitored:" and not always present,
 upper permit limit  # written as "Upper Permit Limit:" and not always present, depends on monitoring type
 lower permit limit  # written as "Lower Permit Limit:" and not always present, depends on monitoring type
 """
-
 
 def convert(pdf):
     call(["pdftotext", "-layout", pdf])
@@ -70,8 +71,6 @@ def background_segment(cleaned):
             if first:
                 records.append(line)
                 start = False
-
-
     return records
 
 
@@ -119,6 +118,7 @@ def parse(record):
         "facility_nsps": [],
         "emission_units": [],
         "controls": [],
+        "stack_height": [],
         "pollutants": [],
         "potential_to_emit": [],
         "emission_unit_description": [],
@@ -234,11 +234,13 @@ def parse(record):
             if control_type not in values["controls"] and control_type != '':
                 values["controls"].append(str(control_type).strip())
 
+        # Get pollutants
         if "Name:" in line:
             pollutant = str(line.split("Name:")[1]).strip()
             if pollutant not in values["pollutants"] and pollutant != '':
                 values["pollutants"].append(str(pollutant).strip())
 
+        # Get rules
         if "40CFR 63" in line:
             try:
                 facility_mact = str(line.split("Subpart")[1]).strip()
@@ -256,9 +258,18 @@ def parse(record):
             except IndexError:
                 pass
 
+        # Get stack height
+        if "Height (ft.):" in line:
+            stack_height = str(line.split('Height (ft.):')[1]).strip()
+            stack_height = re.sub("[^0-9]", "", stack_height[:3])
+            if stack_height not in values["stack_height"] and stack_height != '':
+                values["stack_height"].append(str(stack_height).strip())
+
+
     for key in values:
         values[key] = ", ".join(sorted(values[key]))
     return values
+
 
 def main(pdf=None):
     open('output.csv', 'w').close()
@@ -285,6 +296,7 @@ def main(pdf=None):
             records = []
             cleaned = clean(name_text)
 
+            # Limit file to stuff we care about
             stuff_we_care_about = [background_segment(cleaned) +
                                    list_of_conditions_segment(cleaned) +
                                    rest_of_file_segment(cleaned)]
@@ -310,6 +322,7 @@ def main(pdf=None):
                                        "facility_nsps",
                                        "emission_units",
                                        "controls",
+                                       "stack_height",
                                        "pollutants",
                                        "potential_to_emit",
                                        "emission_unit_description",
