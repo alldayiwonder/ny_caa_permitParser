@@ -118,7 +118,8 @@ def parse(record):
         "facility_nsps": [],
         "emission_units": [],
         "controls": [],
-        "stack_height": [],
+        "max_stack_height": [],
+        "stack_heights": [],
         "pollutants": [],
         "potential_to_emit": [],
         "emission_unit_description": [],
@@ -262,9 +263,17 @@ def parse(record):
         if "Height (ft.):" in line:
             stack_height = str(line.split('Height (ft.):')[1]).strip()
             stack_height = re.sub("[^0-9]", "", stack_height[:3])
-            if stack_height not in values["stack_height"] and stack_height != '':
-                values["stack_height"].append(str(stack_height).strip())
+            if stack_height not in values["stack_heights"] and stack_height != '':
+                values["stack_heights"].append(str(stack_height).strip())
 
+    # Get highest stack height found in permit
+    try:
+        heights = values['stack_heights']
+        heights = [int(i) for i in heights]
+        max_height = max(set(heights))
+        values['max_stack_height'].append(str(max_height))
+    except:
+        pass
 
     for key in values:
         values[key] = ", ".join(sorted(values[key]))
@@ -322,7 +331,8 @@ def main(pdf=None):
                                        "facility_nsps",
                                        "emission_units",
                                        "controls",
-                                       "stack_height",
+                                       "max_stack_height",
+                                       "stack_heights",
                                        "pollutants",
                                        "potential_to_emit",
                                        "emission_unit_description",
